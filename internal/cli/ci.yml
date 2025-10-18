@@ -1,0 +1,51 @@
+name: Go CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24.6' # Garanta que a versão é compatível com seu go.mod
+
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Run unit tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # Opcional: para reports privados
+          files: ./coverage.out
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test # Garante que o build só roda se os testes passarem
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Build CLI
+        run: go build -v -o secScan ./cmd/main.go
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: secScan-binary
+          path: secScan
